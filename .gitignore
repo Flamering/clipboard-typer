@@ -1,0 +1,5 @@
+dist/
+build/
+src/vendor/WebView2Loader.dll
+.superpowers/
+node_modules/
