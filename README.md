@@ -4,17 +4,18 @@ Panel de historial del portapapeles estilo Win+V que **escribe** el texto elegid
 
 ## Instalación en tu PC Windows
 
-### Forma rápida (un comando)
+### Forma rápida (un comando, instala dependencias)
 
-1. Copia esta carpeta del proyecto a tu PC (por ejemplo con `scp -r /root/clipboard-typer usuario@TU-PC:C:\clipboard-typer` o por USB).
-2. Instala **AutoHotkey v2 (64-bit)** desde <https://www.autohotkey.com/> — hace falta para compilar.
-3. Abre PowerShell en la carpeta copiada y ejecuta:
+1. Copia esta carpeta del proyecto a tu PC (por ejemplo con el zip que se indica abajo o por USB).
+2. Abre PowerShell en la carpeta copiada y ejecuta:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1
 ```
 
-El script descarga `WebView2Loader.dll`, compila `src\ClipboardTyper.ahk` con Ahk2Exe y deja todo en `%LOCALAPPDATA%\ClipboardTyper`. Luego ejecuta:
+El script **instala las dependencias** (WebView2 Runtime y AutoHotkey v2, vía winget o descarga directa), baja `WebView2Loader.dll` x64, compila `src\ClipboardTyper.ahk` con Ahk2Exe, copia el programa a `%LOCALAPPDATA%\ClipboardTyper`, crea accesos directos en Inicio y Escritorio y lo registra en *Aplicaciones y características* para poder desinstalarlo. No pide administrador. Si prefieres no tocar dependencias, añade `-SkipDependencies`.
+
+Luego verifica:
 
 ```powershell
 & "$env:LOCALAPPDATA\ClipboardTyper\ClipboardTyper.exe" --self-test
@@ -31,7 +32,17 @@ Copia a `%LOCALAPPDATA%\ClipboardTyper\` estos cuatro ficheros: `src\ClipboardTy
 
 No necesita administrador, no instala servicios y no escribe en `Program Files`.
 
-Si falta el runtime WebView2 (Windows 10 o Windows 11 recortado), el programa muestra un aviso con el enlace al *WebView2 Evergreen Runtime*.
+### Desinstalar
+
+Desde *Aplicaciones y características* → **Portapapeles typer** → Desinstalar, o:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\ClipboardTyper\uninstall-windows.ps1"
+```
+
+Borra accesos directos, registro, el programa y su configuración (añade `-KeepConfig` para conservarla).
+
+Si el runtime WebView2 falta y no se pudo instalar automáticamente, el programa muestra un aviso con el enlace al *WebView2 Evergreen Runtime*.
 
 > **Build desde Linux:** el `.exe` del zip generado aquí es un *placeholder* (es el `.ahk` copiado). El script `install-windows.ps1` lo compila correctamente en Windows.
 
