@@ -3,3 +3,5 @@ build/
 src/vendor/WebView2Loader.dll
 .superpowers/
 node_modules/
+
+clipboard-typer-instalador-*.zip
