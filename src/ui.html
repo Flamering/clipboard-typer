@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Historial del portapapeles — typer</title>
+<style>
+  :root{ font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif; color:#1b1b1f; }
+  html,body{ margin:0; padding:0; }
+  .wrap{ width:100%; }
+  .panel{
+    box-sizing:border-box; width:100%; max-width:430px; margin:0 auto; padding:18px 18px 14px;
+    background:linear-gradient(180deg,#eaf3ff 0%,#dbe9ff 100%);
+    border:1px solid rgba(120,150,200,.25); border-radius:14px;
+    box-shadow:0 14px 40px rgba(60,90,140,.22);
+  }
+  .panel.pinned{ box-shadow:0 0 0 2px #3a86e0,0 14px 40px rgba(60,90,140,.28); }
+  .top{ display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 2px 4px; }
+  .icon-btn{ width:30px; height:30px; display:grid; place-items:center; border:1px solid transparent; border-radius:7px; background:transparent; cursor:pointer; }
+  .icon-btn:hover{ background:rgba(255,255,255,.7); border-color:rgba(0,0,0,.07); }
+  .icon-btn.on{ background:rgba(58,134,224,.18); border-color:#3a86e0; }
+  .top svg{ width:21px; height:21px; stroke:#2b2b30; fill:none; stroke-width:1.8; }
+  .pin.on svg{ fill:#3a86e0; stroke:#3a86e0; }
+  h1{ font-size:26px; font-weight:650; letter-spacing:-.4px; margin:6px 2px 16px; }
+
+  .list{ box-sizing:border-box; height:250px; overflow-y:auto; overscroll-behavior:contain; padding-right:4px; margin-bottom:14px; }
+  .list::-webkit-scrollbar{ width:8px; }
+  .list::-webkit-scrollbar-thumb{ background:rgba(90,120,170,.35); border-radius:8px; }
+  .card{
+    box-sizing:border-box; width:100%; min-height:94px; margin-bottom:10px; padding:16px 16px 12px;
+    text-align:left; cursor:pointer; font:inherit; color:#1b1b1f;
+    background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:12px;
+    box-shadow:0 2px 6px rgba(60,90,140,.10); position:relative;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .card:hover{ background:#fafcff; }
+  .card.sel{ background:#eef6ff; border-color:#3a86e0; box-shadow:0 0 0 2px rgba(58,134,224,.25),0 2px 6px rgba(60,90,140,.10); }
+  .txt{ font-size:20px; line-height:1.25; word-break:break-word; }
+  .clip{ flex:0 0 auto; width:22px; height:26px; stroke:#2b2b30; fill:none; stroke-width:1.8; opacity:.8; }
+  .move{ font-size:11px; color:#3a86e0; position:absolute; left:16px; bottom:8px; display:none; }
+  .card.sel .move{ display:block; }
+
+  .settings{ box-sizing:border-box; padding:12px 14px; background:rgba(255,255,255,.75); border:1px solid rgba(0,0,0,.07); border-radius:12px; margin-bottom:12px; }
+  .settings h2{ font-size:13px; font-weight:600; margin:0 0 10px; color:#2b2b30; }
+  .row{ display:flex; align-items:center; gap:10px; }
+  .row + .row{ margin-top:12px; }
+  .row .lab{ font-size:12px; color:#2b2b30; min-width:74px; }
+  input[type=range]{ flex:1; accent-color:#3a86e0; min-width:0; }
+  .ms{ font-size:12px; font-variant-numeric:tabular-nums; min-width:98px; text-align:right; color:#2b2b30; white-space:nowrap; }
+  .qual{ font-size:11px; color:#3a86e0; min-width:48px; }
+  .hk{ flex:1; min-width:0; padding:7px 10px; font:inherit; font-size:12px; text-align:center; background:#fff; color:#2b2b30; border:1px solid rgba(0,0,0,.16); border-radius:7px; cursor:pointer; }
+  .hk.listening{ border-color:#3a86e0; box-shadow:0 0 0 2px rgba(58,134,224,.25); color:#3a86e0; }
+  .hint{ font-size:11px; color:#5a6472; margin-top:9px; }
+  kbd{ font:inherit; font-size:10px; padding:1px 5px; border-radius:4px; background:#fff; border:1px solid rgba(0,0,0,.14); }
+  .clear{ display:block; margin:0 auto; padding:9px 20px; font:inherit; font-size:14px; cursor:pointer; color:#2b2b30; background:#fff; border:1px solid rgba(0,0,0,.08); border-radius:9px; box-shadow:0 2px 6px rgba(60,90,140,.12); }
+  .clear:hover{ background:#fafcff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel" id="panel">
+    <div class="top">
+      <button class="icon-btn" id="search" title="Buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
+      <button class="icon-btn pin" id="pin" title="Anclar siempre encima"><svg viewBox="0 0 24 24"><path d="M9 3h6l-1 6 4 3v2H6v-2l4-3-1-6z"/><path d="M12 14v7"/></svg></button>
+      <button class="icon-btn" id="more" title="Más"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+    </div>
+
+    <h1>Historial del portapapeles</h1>
+
+    <div class="list" id="list">
+      <button class="card sel"><span class="txt">Texto</span><svg class="clip" viewBox="0 0 24 28"><rect x="4" y="4" width="16" height="22" rx="2"/><path d="M9 4V3a2 2 0 0 1 4 0v1"/></svg><span class="move">Escribir con el hotkey</span></button>
+      <button class="card"><span class="txt">Historial del portapapeles</span><svg class="clip" viewBox="0 0 24 28"><rect x="4" y="4" width="16" height="22" rx="2"/><path d="M9 4V3a2 2 0 0 1 4 0v1"/></svg><span class="move">Escribir con el hotkey</span></button>
+      <button class="card"><span class="txt">Windows 11</span><svg class="clip" viewBox="0 0 24 28"><rect x="4" y="4" width="16" height="22" rx="2"/><path d="M9 4V3a2 2 0 0 1 4 0v1"/></svg><span class="move">Escribir con el hotkey</span></button>
+      <button class="card"><span class="txt">Prueba</span><svg class="clip" viewBox="0 0 24 28"><rect x="4" y="4" width="16" height="22" rx="2"/><path d="M9 4V3a2 2 0 0 1 4 0v1"/></svg><span class="move">Escribir con el hotkey</span></button>
+      <button class="card"><span class="txt">arturo@correo.com</span><svg class="clip" viewBox="0 0 24 28"><rect x="4" y="4" width="16" height="22" rx="2"/><path d="M9 4V3a2 2 0 0 1 4 0v1"/></svg><span class="move">Escribir con el hotkey</span></button>
+      <button class="card"><span class="txt">av. Libertador 1234</span><svg class="clip" viewBox="0 0 24 28"><rect x="4" y="4" width="16" height="22" rx="2"/><path d="M9 4V3a2 2 0 0 1 4 0v1"/></svg><span class="move">Escribir con el hotkey</span></button>
+    </div>
+
+    <div class="settings">
+      <h2>Ajustes</h2>
+      <div class="row">
+        <span class="lab">Velocidad</span>
+        <input id="speed" type="range" min="5" max="100" value="25" aria-label="Velocidad de escritura">
+        <span class="qual" id="qual">normal</span>
+        <span class="ms" id="ms">25 ms/letra</span>
+      </div>
+      <div class="row">
+        <span class="lab">Activación</span>
+        <button class="hk" id="hk">Ctrl + Shift + V</button>
+      </div>
+      <div class="hint">Pulsa el botón de activación y luego las teclas (modificadores + tecla). <kbd>Esc</kbd> cancela.</div>
+    </div>
+
+    <button class="clear" id="clear">Borrar todo</button>
+  </div>
+</div>
+
+<script src="bridge.testable.js"></script>
+<script>
+(function () {
+  'use strict'
+  const B = globalThis.TyperBridge
+  const cards = () => [...document.querySelectorAll('.card')]
+  let selected = 0
+  let hotkey = B.defaultConfig().hotkey
+
+  function select(i) {
+    const all = cards()
+    if (!all[i]) return
+    selected = i
+    all.forEach((x, j) => x.classList.toggle('sel', j === i))
+  }
+  document.getElementById('list').addEventListener('click', (e) => {
+    const card = e.target.closest('.card')
+    if (card) select(cards().indexOf(card))
+  })
+
+  const panel = document.getElementById('panel')
+  const pin = document.getElementById('pin')
+  pin.addEventListener('click', () => {
+    const on = pin.classList.toggle('on')
+    panel.classList.toggle('pinned', on)
+    state.setAlwaysOnTop(on)
+    notify({ type: 'always_on_top', value: on })
+  })
+
+  const speed = document.getElementById('speed')
+  const ms = document.getElementById('ms')
+  const qual = document.getElementById('qual')
+  function refreshSpeed() {
+    const msValue = B.clampDelay(speed.value)
+    ms.textContent = msValue + ' ms/letra'
+    qual.textContent = B.describeSpeed(msValue)
+  }
+  speed.addEventListener('input', () => {
+    refreshSpeed()
+    notify({ type: 'delay_ms', value: B.clampDelay(speed.value) })
+  })
+  refreshSpeed()
+
+  let listening = false
+  let mods = []
+  const hk = document.getElementById('hk')
+  hk.addEventListener('click', () => {
+    listening = true
+    mods = []
+    hk.textContent = 'Pulsa teclas…'
+    hk.classList.add('listening')
+  })
+  document.addEventListener('keydown', (e) => {
+    if (!listening) return
+    e.preventDefault()
+    if (e.key === 'Escape') {
+      listening = false
+      hk.textContent = hotkey
+      hk.classList.remove('listening')
+      state.resetHotkey()
+      return
+    }
+    const map = { Control: 'Ctrl', Alt: 'Alt', Shift: 'Shift', Meta: 'Win' }
+    if (map[e.key]) {
+      if (!mods.includes(map[e.key])) mods.push(map[e.key])
+      hk.textContent = B.normalizeHotkey(mods, '')
+      return
+    }
+    const base = e.key.length === 1 ? e.key.toUpperCase() : e.key
+    listening = false
+    hk.classList.remove('listening')
+    const normalized = B.normalizeHotkey(mods, base)
+    state.setHotkey(normalized)
+    if (!normalized) {
+      hk.textContent = hotkey
+      state.resetHotkey()
+      return
+    }
+    hotkey = normalized
+    hk.textContent = hotkey
+    notify({ type: 'hotkey', value: hotkey })
+  })
+
+  document.getElementById('clear').addEventListener('click', () => {
+    const all = cards()
+    all.forEach((c) => c.remove())
+    selected = 0
+    notify({ type: 'clear_history' })
+  })
+
+  function notify(payload) {
+    if (globalThis.chrome && globalThis.chrome.webview) {
+      globalThis.chrome.webview.postMessage(JSON.stringify(payload))
+    }
+  }
+
+  const state = {
+    getText() {
+      const card = cards()[selected]
+      return card ? card.querySelector('.txt').textContent : ''
+    },
+    getDelay() { return B.clampDelay(speed.value) },
+    isPinned() { return pin.classList.contains('on') },
+    setAlwaysOnTop(v) {
+      pin.classList.toggle('on', !!v)
+      panel.classList.toggle('pinned', !!v)
+    },
+    setHotkey(v) { hotkey = v || B.defaultConfig().hotkey; hk.textContent = hotkey },
+    resetHotkey() { state.setHotkey(B.defaultConfig().hotkey) },
+    getHotkey() { return hotkey },
+    addClipboardText(text) {
+      if (typeof text !== 'string' || !text) return
+      const list = document.getElementById('list')
+      const card = document.createElement('button')
+      card.className = 'card'
+      const span = document.createElement('span')
+      span.className = 'txt'
+      span.textContent = text
+      const clip = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      clip.setAttribute('class', 'clip')
+      card.append(span, clip)
+      list.prepend(card)
+      select(0)
+      while (cards().length > 25) list.lastElementChild.remove()
+    },
+    clearHistory() {
+      document.getElementById('list').replaceChildren()
+      selected = 0
+    },
+  }
+  globalThis.typerState = state
+  window.typerState = state
+})()
+</script>
+</body>
+</html>
