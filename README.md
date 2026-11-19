@@ -1,38 +1,89 @@
-# Portapapeles typer (Windows 11)
+# Portapapeles typer
 
-Panel de historial del portapapeles estilo Win+V que **escribe** el texto elegido letra por letra en el campo con el foco, en lugar de pegarlo.
+Panel de historial del portapapeles estilo **Windows 11** que **escribe** el texto elegido letra por letra en el campo con el foco, en lugar de pegarlo. Útil cuando un formulario ignora `Ctrl+V` o cuando necesitas controlar la velocidad de entrada.
 
-## Instalación en tu PC Windows
+- Historial de los últimos 25 textos copiados, con scroll interno vertical.
+- Slider de **5 a 100 ms por letra** (rápido / normal / lento), aplicable en caliente.
+- Hotkey global configurable desde la propia GUI (por defecto `Ctrl+Shift+V`).
+- Botón de anclaje "siempre encima" con estado persistente.
+- Bandeja del sistema para mostrar/ocultar el panel.
+- Escritura con `SendInput` + `KEYEVENTF_UNICODE` (acentos y `ñ` correctos).
+- Instalación por usuario, sin administrador, sin servicios, sin red en tiempo de ejecución.
 
-### Forma rápida (un comando, instala dependencias)
+## Descarga e instalación
 
-1. Copia esta carpeta del proyecto a tu PC (por ejemplo con el zip que se indica abajo o por USB).
-2. Abre PowerShell en la carpeta copiada y ejecuta:
+### Desde GitHub (recomendado)
+
+1. En la página de **Releases**, descarga `clipboard-typer-instalador-v1.0.0.zip`.
+2. Descomprime en cualquier carpeta de tu usuario.
+3. Abre PowerShell dentro de la carpeta descomprimida y ejecuta:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1
 ```
 
-El script **instala las dependencias** (WebView2 Runtime y AutoHotkey v2, vía winget o descarga directa), baja `WebView2Loader.dll` x64, compila `src\ClipboardTyper.ahk` con Ahk2Exe, copia el programa a `%LOCALAPPDATA%\ClipboardTyper`, crea accesos directos en Inicio y Escritorio y lo registra en *Aplicaciones y características* para poder desinstalarlo. No pide administrador. Si prefieres no tocar dependencias, añade `-SkipDependencies`.
+O, si has clonado el repositorio:
 
-Luego verifica:
+```bash
+git clone https://github.com/Flamering/clipboard-typer.git
+cd clipboard-typer
+```
+
+y el mismo comando PowerShell.
+
+### Qué instala el instalador
+
+El script `scripts/install-windows.ps1` es **completo**:
+
+1. Instala **WebView2 Runtime** (winget; si no está, bootstrapper oficial de Microsoft).
+2. Instala **AutoHotkey v2 de 64 bit** (winget; si no, descarga el último setup de GitHub con `/SILENT`).
+3. Descarga `WebView2Loader.dll` x64 del paquete NuGet oficial `Microsoft.Web.WebView2`.
+4. Compila `src\ClipboardTyper.ahk` con **Ahk2Exe**.
+5. Copia el programa y sus recursos a `%LOCALAPPDATA%\ClipboardTyper\`.
+6. Crea accesos directos en Inicio y Escritorio.
+7. Registra **Portapapeles typer** en *Aplicaciones y características* para poder desinstalarlo.
+
+No pide administrador y no escribe en `Program Files`. El progreso se guarda en `%TEMP%\clipboard-typer-install.log`.
+
+Opciones:
+
+| Opción | Efecto |
+|---|---|
+| `-SkipDependencies` | No instala AutoHotkey ni WebView2 (útil si ya los tienes o estás sin red). |
+| `-NoDesktopShortcut` | No crea el acceso del Escritorio. |
+| `-NoAutoStart` | Reservado; v1 no crea inicio automático de todos modos. |
+| `-Ahk2Exe "ruta"` | Ruta explícita a `Ahk2Exe.exe`. |
+| `-InstallDir "ruta"` | Directorio de destino distinto. |
+
+Si Windows muestra *"Windows protegió tu PC"*, pulsa **Más información → Ejecutar de todos modos** (el binario de v1 no está firmado; ver deuda en el spec).
+
+## Verificación
 
 ```powershell
 & "$env:LOCALAPPDATA\ClipboardTyper\ClipboardTyper.exe" --self-test
 Get-Content "$env:LOCALAPPDATA\ClipboardTyper\selftest.log"
 ```
 
-### Si Windows muestra "Windows protegió tu PC"
+Esperado: `webview2=OK`, `hotkey=OK`, `clipboard=OK`, `sendinput=OK`, `config=OK`, `ui=OK`.
 
-Pulsa **Más información → Ejecutar de todos modos**. El binario de v1 no está firmado (deuda en el spec).
+La checklist completa de campo está en
+`docs/superpowers/evidence/2026-11-19-clipboard-typer-field-checklist.md`.
+El spec no se marca `VERIFICADO` hasta que esa checklist y el `selftest.log` estén completos en el equipo Windows.
 
-### Instalación manual (sin Ahk2Exe)
+## Uso
 
-Copia a `%LOCALAPPDATA%\ClipboardTyper\` estos cuatro ficheros: `src\ClipboardTyper.ahk` (renombrado a `ClipboardTyper.exe`), `src\ui.html`, `src\bridge.testable.js` y `WebView2Loader.dll` x64. Instala AutoHotkey v2 y ejecuta el `.ahk` con él. Funciona, pero requiere tener AHK instalado.
+1. Copia texto como siempre: aparece como primera tarjeta del historial.
+2. Haz clic en la tarjeta que quieras escribir.
+3. Pon el foco en el campo del formulario y pulsa `Ctrl+Shift+V` (o tu hotkey).
+4. El texto se escribe carácter por carácter al delay del slider.
 
-No necesita administrador, no instala servicios y no escribe en `Program Files`.
+- **Velocidad:** 5–100 ms/letra. El cambio se aplica en el siguiente disparo, sin reiniciar.
+- **Chincheta:** alterna "siempre encima"; se guarda en la config.
+- **Activación:** pulsa el botón del hotkey, luego modificadores + tecla simple. `Esc` cancela. Si el combo está ocupado, aparece un aviso y se conserva el anterior.
+- **Borrar todo:** vacía el historial; no toca velocidad, pin ni hotkey.
+- **Bandeja:** clic derecho → *Mostrar/Ocultar* o *Salir*.
 
-### Desinstalar
+## Desinstalación
 
 Desde *Aplicaciones y características* → **Portapapeles typer** → Desinstalar, o:
 
@@ -40,55 +91,64 @@ Desde *Aplicaciones y características* → **Portapapeles typer** → Desinstal
 powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\ClipboardTyper\uninstall-windows.ps1"
 ```
 
-Borra accesos directos, registro, el programa y su configuración (añade `-KeepConfig` para conservarla).
+Borra accesos directos, entrada de registro, el programa y su configuración. Añade `-KeepConfig` para conservar velocidad, pin y hotkey.
 
-Si el runtime WebView2 falta y no se pudo instalar automáticamente, el programa muestra un aviso con el enlace al *WebView2 Evergreen Runtime*.
+## Arquitectura
 
-> **Build desde Linux:** el `.exe` del zip generado aquí es un *placeholder* (es el `.ahk` copiado). El script `install-windows.ps1` lo compila correctamente en Windows.
-
-## Uso
-
-- Copia texto como siempre: aparece como primera tarjeta del historial (máximo 25 entradas, scroll interno).
-- Haz clic en la tarjeta que quieras escribir.
-- **Hotkey por defecto:** `Ctrl + Shift + V` → escribe ese texto en el campo con el foco, carácter por carácter.
-- **Velocidad:** slider de 5 a 100 ms por letra (`rápido` ≤ 15, `normal` ≤ 40, `lento` > 40). El cambio se aplica en el siguiente disparo, sin reiniciar.
-- **Chincheta:** alterna "siempre encima"; el estado se guarda.
-- **Activación:** pulsa el botón `Ctrl + Shift + V`, luego tus teclas (modificadores + tecla simple). `Esc` cancela. Si el combo está ocupado, se muestra un aviso y se conserva el anterior.
-- **Borrar todo:** vacía el historial; no borra velocidad, pin ni hotkey.
-
-Acentos y `ñ` se escriben correctamente mediante `KEYEVENTF_UNICODE`. Emojis fuera del BMP pueden no escribirse bien en v1.
-
-## Desinstalación
-
-Cierra el programa y borra:
-
-- la carpeta donde descomprimiste el zip,
-- `%LOCALAPPDATA%\ClipboardTyper\` (ui.html, DLL y datos del navegador),
-- `%APPDATA%\ClipboardTyper\` (config.json).
-
-No hay desinstalador ni entradas de inicio automático.
-
-## Límites conocidos
-
-- Windows x64. En ARM64 corre emulado.
-- No funciona en campos de escritorio seguro ni en aplicaciones elevadas.
-- Sin red, sin telemetría, sin sincronización en la nube.
-- V1 no garantiza comportamiento frente a mecanismos anti-automatización de sitios terceros.
-
-## Desarrollo y verificación
-
-```bash
-node --test tests/
-node scripts/validate-ui.js
-bash scripts/package.sh
-bash scripts/clean.sh
+```
+Portapapeles Win32
+  → OnClipboardChange (AHK) → historial ≤25
+  → WebView2 (ui.html + bridge.testable.js) → selección + delay + hotkey
+  → window.typerState (puente JS↔AHK)
+  → RegisterHotKey global → SendInput carácter por carácter → campo con foco
 ```
 
-En Windows, ejecuta `ClipboardTyper.exe --self-test` y revisa `selftest.log`; la checklist de campo está en `docs/superpowers/evidence/`.
+La GUI **nunca** genera eventos de teclado: solo publica `{texto, delay}`. Eso evita el problema de los eventos sintéticos con `isTrusted=false`, que los formularios que bloquean el pegado suelen ignorar.
 
-## Origen de dependencias vendored
+| Pieza | Archivo | Responsabilidad |
+|---|---|---|
+| Lógica pura | `src/bridge.testable.js` | hotkey, delay, config, historial — testeable en Node |
+| UI | `src/ui.html` | panel, scroll, slider, pin, editor de hotkey |
+| Host | `src/ClipboardTyper.ahk` | clipboard, hotkey, always-on-top, `SendInput`, self-test |
+| Wrapper WebView2 | `src/vendor/` | puente COM con Edge WebView2 |
+| Instalador | `scripts/install-windows.ps1` | dependencias + compilación + registro |
+| Desinstalador | `scripts/uninstall-windows.ps1` | limpieza completa |
 
-`src/vendor/` contiene el wrapper WebViewToo y sus dependencias, tomados de
-`github.com/xxxxue/AutoHotKey-WebView2-React` (ruta `src-runtime/ahk-lib/`).
-`WebView2Loader.dll` se descarga del paquete NuGet oficial `Microsoft.Web.WebView2`
-en cada empaquetado. Revisa las licencias de esos proyectos antes de redistribuir.
+## Desarrollo y tests
+
+Requiere Node 18+ y Python 3 (para generar el zip).
+
+```bash
+npm test                       # 10 tests: lógica, UI, AHK estático, empaquetado, instaladores
+node scripts/validate-ui.js    # valida el HTML del panel
+bash scripts/package.sh        # genera dist/ClipboardTyper-v1.0.0.zip
+bash scripts/clean.sh          # borra dist/ y build/
+```
+
+Para generar el **zip del instalador** (el que se sube a Releases):
+
+```bash
+python3 -c "import shutil; shutil.make_archive('clipboard-typer-instalador-v1.0.0','zip','clipboard-typer')"
+```
+
+Los tests de AHK, instalador y empaquetado son **estáticos**: este repositorio se desarrolla en Linux y no puede ejecutar Windows, AHK ni PowerShell. La parte dinámica se comprueba con `--self-test` y la checklist de campo.
+
+## Limitaciones
+
+- Windows 11 x64. En ARM64 corre emulado.
+- Emojis fuera del BMP (supervolados) pueden no escribirse bien en v1.
+- No funciona en campos de escritorio seguro ni en aplicaciones elevadas.
+- Sin red, telemetría ni sincronización en la nube.
+- V1 no promete comportamiento frente a mecanismos anti-automatización de sitios terceros.
+- El `.exe` generado fuera de Windows es un placeholder; el instalador lo compila con Ahk2Exe en el equipo destino.
+
+## Documentación del diseño
+
+- Spec: `docs/superpowers/specs/2026-11-19-clipboard-typer-design.md`
+- Plan: `docs/superpowers/plans/2026-11-19-clipboard-typer.md`
+- Estado: `docs/superpowers/INDEX.md`
+- Avisos de terceros: `THIRD_PARTY_NOTICES.md`
+
+## Licencia
+
+MIT para el código propio de este repositorio (ver `LICENSE`). El código incluido en `src/vendor/` y el DLL de Microsoft tienen sus propias condiciones: consulta `THIRD_PARTY_NOTICES.md`.
