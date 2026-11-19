@@ -2,17 +2,38 @@
 
 Panel de historial del portapapeles estilo Win+V que **escribe** el texto elegido letra por letra en el campo con el foco, en lugar de pegarlo.
 
-## Instalación en 3 pasos
+## Instalación en tu PC Windows
 
-1. Descarga `ClipboardTyper-v1.0.0.zip` y descomprímelo en una carpeta de tu usuario (por ejemplo `%LOCALAPPDATA%\ClipboardTyper`).
-2. Si Windows muestra *"Windows protegió tu PC"*, pulsa **Más información → Ejecutar de todos modos**. El binario de v1 no está firmado (ver deuda en el spec).
-3. Ejecuta `ClipboardTyper.exe`. Aparece el panel; el icono de la bandeja permite mostrarlo u ocultarlo.
+### Forma rápida (un comando)
+
+1. Copia esta carpeta del proyecto a tu PC (por ejemplo con `scp -r /root/clipboard-typer usuario@TU-PC:C:\clipboard-typer` o por USB).
+2. Instala **AutoHotkey v2 (64-bit)** desde <https://www.autohotkey.com/> — hace falta para compilar.
+3. Abre PowerShell en la carpeta copiada y ejecuta:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-windows.ps1
+```
+
+El script descarga `WebView2Loader.dll`, compila `src\ClipboardTyper.ahk` con Ahk2Exe y deja todo en `%LOCALAPPDATA%\ClipboardTyper`. Luego ejecuta:
+
+```powershell
+& "$env:LOCALAPPDATA\ClipboardTyper\ClipboardTyper.exe" --self-test
+Get-Content "$env:LOCALAPPDATA\ClipboardTyper\selftest.log"
+```
+
+### Si Windows muestra "Windows protegió tu PC"
+
+Pulsa **Más información → Ejecutar de todos modos**. El binario de v1 no está firmado (deuda en el spec).
+
+### Instalación manual (sin Ahk2Exe)
+
+Copia a `%LOCALAPPDATA%\ClipboardTyper\` estos cuatro ficheros: `src\ClipboardTyper.ahk` (renombrado a `ClipboardTyper.exe`), `src\ui.html`, `src\bridge.testable.js` y `WebView2Loader.dll` x64. Instala AutoHotkey v2 y ejecuta el `.ahk` con él. Funciona, pero requiere tener AHK instalado.
 
 No necesita administrador, no instala servicios y no escribe en `Program Files`.
 
 Si falta el runtime WebView2 (Windows 10 o Windows 11 recortado), el programa muestra un aviso con el enlace al *WebView2 Evergreen Runtime*.
 
-> **Build desde Linux:** el `.exe` incluido en el zip generado fuera de Windows es un *placeholder*. Compila `src/ClipboardTyper.ahk` con **Ahk2Exe** (Unicode 64-bit) en un equipo Windows y sustituye el fichero antes de distribuir.
+> **Build desde Linux:** el `.exe` del zip generado aquí es un *placeholder* (es el `.ahk` copiado). El script `install-windows.ps1` lo compila correctamente en Windows.
 
 ## Uso
 
