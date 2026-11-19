@@ -34,6 +34,14 @@ UI_PATH := LOCAL_DIR "\ui.html"
 if !FileExist(LOCAL_DIR)
     DirCreate(LOCAL_DIR)
 
+; El zip entrega los recursos junto al exe; se copian al directorio local
+; la primera vez para que la ruta sea estable aunque se ejecute desde otro sitio.
+for resource in ["ui.html", "bridge.testable.js", "WebView2Loader.dll"] {
+    target := LOCAL_DIR "\" resource
+    if !FileExist(target) && FileExist(A_ScriptDir "\" resource)
+        FileCopy(A_ScriptDir "\" resource, target)
+}
+
 ; --- Config -----------------------------------------------------------------
 DefaultConfig() {
     return Map("hotkey", "Ctrl + Shift + V", "delay_ms", 25, "always_on_top", false, "version", 1)
@@ -78,7 +86,7 @@ if !FileExist(UI_PATH) {
     ExitApp(1)
 }
 
-settings := Map("DllPath", DLL_PATH, "DataDir", LOCAL_DIR "\WebView2Data")
+settings := { DllPath: DLL_PATH, DataDir: LOCAL_DIR "\WebView2Data" }
 g := WebViewGui("+Resize", , , settings)
 g.Title := "Historial del portapapeles"
 g.Control.IsWebMessageEnabled := true

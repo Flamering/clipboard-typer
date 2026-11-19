@@ -22,3 +22,5 @@ for (const token of required) {
   assert.ok(src.includes(token), `falta en ClipboardTyper.ahk: ${token}`)
 }
 assert.match(src, /if\s*\([^\n]*CF_UNICODETEXT[^\n]*\)\s*\{\s*return/, 'debe ignorar portapapeles no textual')
+assert.ok(src.includes('FileCopy'), 'debe copiar los recursos al directorio local si faltan')
+assert.ok(src.includes('{ DllPath:'), 'WebViewToo espera un objeto con HasProp, no un Map')
